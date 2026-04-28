@@ -13,6 +13,7 @@ import PatientProfile from "./pages/PatientProfile";
 import MedicalHistory from "./pages/MedicalHistory";
 import Tasks from "./pages/Tasks";
 import Prescriptions from "./pages/Prescriptions";
+import Appointments from "./pages/Appointments";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -47,6 +48,7 @@ const App = () => (
           <Route path="/patients/:id/history" element={<ProtectedRoute><MedicalHistory /></ProtectedRoute>} />
           <Route path="/tasks" element={<ProtectedRoute><Tasks /></ProtectedRoute>} />
           <Route path="/prescriptions" element={<ProtectedRoute><Prescriptions /></ProtectedRoute>} />
+          <Route path="/appointments" element={<ProtectedRoute><Appointments /></ProtectedRoute>} />
           <Route path="/staff" element={<ProtectedRoute><Staff /></ProtectedRoute>} />
           <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
           

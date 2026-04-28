@@ -16,8 +16,10 @@ import {
   ArrowLeft,
   ClipboardList,
   Pill,
-  History
+  History,
+  Activity
 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const PatientProfile = () => {
   const { id } = useParams();
