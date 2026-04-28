@@ -17,6 +17,7 @@ import Appointments from "./pages/Appointments";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
+// import { Analytics } from "@vercel/analytics/next"
 
 const queryClient = new QueryClient();
 
