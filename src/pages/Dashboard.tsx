@@ -1,3 +1,5 @@
+// TODO(BACKEND): Connect dashboard actions and navigation context to backend-fed activity streams.
+import { useNavigate } from "react-router-dom";
 import { MOCK_USERS, MOCK_PATIENTS, MOCK_TASKS } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -5,8 +7,10 @@ import { Users, ClipboardCheck, Clock, Activity, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { showSuccess } from "@/utils/toast";
 
 const Dashboard = () => {
+  const navigate = useNavigate();
   const role = localStorage.getItem('hms_user_role') || 'doctor';
   const user = MOCK_USERS.find(u => u.role === role) || MOCK_USERS[0];
 
@@ -67,7 +71,7 @@ const Dashboard = () => {
                             <p className="text-xs text-slate-500">ID: {p.id}</p>
                           </div>
                         </div>
-                        <Badge variant="outline" className="bg-white">View RX</Badge>
+                        <Badge variant="outline" className="bg-white cursor-pointer" onClick={() => navigate('/prescriptions')}>View RX</Badge>
                       </div>
                     ))}
                   </div>
@@ -78,7 +82,7 @@ const Dashboard = () => {
             <Card className="border-none shadow-sm rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between">
                 <CardTitle>{role === 'nurse' ? 'My Assigned Tasks' : 'Recent Patient Activity'}</CardTitle>
-                <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50">View All</Button>
+                <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50" onClick={() => navigate('/tasks')}>View All</Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">

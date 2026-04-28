@@ -1,5 +1,9 @@
+// TODO(BACKEND): Integrate prescription print/dispense workflows with pharmacy backend services.
 import { useState } from "react";
+import { useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 import { MOCK_PATIENTS, MOCK_PRESCRIPTIONS } from "@/lib/mock-data";
+import { Patient } from "@/types/hms";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -8,8 +12,12 @@ import { Search, Pill, User, Calendar, Printer, CheckCircle } from "lucide-react
 import { showSuccess } from "@/utils/toast";
 
 const Prescriptions = () => {
+  const [searchParams] = useSearchParams();
   const [search, setSearch] = useState("");
-  const [selectedPatient, setSelectedPatient] = useState<any>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Patient | null>(null);
+  const [recordStatus, setRecordStatus] = useState("Active Record");
+  const [showDispenseModal, setShowDispenseModal] = useState(false);
+  const [isDispensed, setIsDispensed] = useState(false)
 
   const handleSearch = () => {
     const patient = MOCK_PATIENTS.find(p => 
@@ -17,7 +25,17 @@ const Prescriptions = () => {
       p.name.toLowerCase().includes(search.toLowerCase())
     );
     setSelectedPatient(patient || null);
+    setRecordStatus("Active Record");
   };
+
+  useEffect(() => {
+    const patientId = searchParams.get("patientId");
+    if (!patientId) return;
+    setSearch(patientId);
+    const patient = MOCK_PATIENTS.find((p) => p.id.toLowerCase() === patientId.toLowerCase());
+    setSelectedPatient(patient || null);
+    setRecordStatus("Active Record");
+  }, [searchParams]);
 
   const prescriptions = selectedPatient 
     ? MOCK_PRESCRIPTIONS.filter(p => p.patientId === selectedPatient.id)
@@ -63,8 +81,8 @@ const Prescriptions = () => {
                   <p className="text-sm text-slate-500">ID: {selectedPatient.id} • {selectedPatient.age} yrs • {selectedPatient.gender}</p>
                 </div>
               </div>
-              <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-emerald-100 rounded-lg px-4 py-1.5">
-                Active Record
+              <Badge className={`rounded-lg px-4 py-1.5 ${recordStatus === 'Dispensed' ? 'bg-slate-100 text-slate-700 border-slate-200' : 'bg-emerald-50 text-emerald-700 border-emerald-100'} hover:bg-inherit`}>
+                {recordStatus}
               </Badge>
             </CardContent>
           </Card>
@@ -87,12 +105,30 @@ const Prescriptions = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
-                        <Button variant="outline" size="sm" className="rounded-lg h-9">
+                        <Button variant="outline" size="sm" className="rounded-lg h-9" onClick={() => window.print()}>
                           <Printer size={16} className="mr-2" /> Print
                         </Button>
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 rounded-lg h-9" onClick={() => showSuccess("Medication dispensed")}>
-                          <CheckCircle size={16} className="mr-2" /> Dispense
+                        {!isDispensed ? (
+                        <Button
+                          size="sm"
+                          className="bg-emerald-600 hover:bg-emerald-700 rounded-lg h-9"
+                          onClick={() => {
+                            setShowDispenseModal(true)
+                            setIsDispensed(true)
+                          }}
+                        >
+                          <CheckCircle size={16} className="mr-2" />
+                          Dispense
                         </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          disabled
+                          className="bg-gray-300 text-gray-600 rounded-lg h-9 cursor-not-allowed"
+                        >
+                          Dispensed
+                        </Button>
+                      )}
                       </div>
                     </div>
                   </CardHeader>
@@ -129,6 +165,18 @@ const Prescriptions = () => {
           <div className="space-y-1">
             <h3 className="text-xl font-bold text-slate-900">No Patient Selected</h3>
             <p className="text-slate-500">Enter a patient ID or name above to view their prescriptions.</p>
+          </div>
+        </div>
+      )}
+      {showDispenseModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Confirm Dispense</h3>
+            <p className="text-sm text-slate-600">Proceed to dispense this prescription? Backend audit trail is required.</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowDispenseModal(false)}>Cancel</Button>
+              <Button onClick={() => { setShowDispenseModal(false); setRecordStatus("Dispensed"); showSuccess("Medication dispensed"); }}>Confirm</Button>
+            </div>
           </div>
         </div>
       )}

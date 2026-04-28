@@ -1,3 +1,5 @@
+// TODO(BACKEND): Connect profile actions and billing details to real API endpoints.
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MOCK_PATIENTS, MOCK_TASKS, MOCK_PRESCRIPTIONS } from "@/lib/mock-data";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,8 +22,13 @@ import {
   Activity
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { showSuccess } from "@/utils/toast";
 
 const PatientProfile = () => {
+  const [showBillingModal, setShowBillingModal] = useState(false);
+  const [showPrescriptionModal, setShowPrescriptionModal] = useState(false);
+  const [showTaskModal, setShowTaskModal] = useState(false);
+  const [rxForm, setRxForm] = useState({ drugName: "", quantity: "", instructions: "" });
   const { id } = useParams();
   const navigate = useNavigate();
   const patient = MOCK_PATIENTS.find(p => p.id === id);
@@ -33,20 +40,20 @@ const PatientProfile = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-start sm:items-center gap-3 sm:gap-4">
         <Button variant="ghost" size="icon" className="rounded-full" onClick={() => navigate('/patients')}>
           <ArrowLeft size={20} />
         </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">{patient.name}</h1>
-          <p className="text-slate-500">Patient ID: {patient.id} • Family ID: {patient.familyId}</p>
+        <div className="min-w-0 flex-1">
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 truncate">{patient.name}</h1>
+          <p className="text-slate-500 text-sm sm:text-base break-words">Patient ID: {patient.id} • Family ID: {patient.familyId}</p>
         </div>
-        <div className="ml-auto flex gap-2">
-          <Button variant="outline" className="rounded-xl" onClick={() => navigate(`/patients/${id}/history`)}>
+        <div className="w-full sm:w-auto sm:ml-auto flex flex-col sm:flex-row gap-2">
+          <Button variant="outline" className="rounded-xl w-full sm:w-auto" onClick={() => navigate(`/patients/${id}/history`)}>
             <History className="mr-2" size={18} />
             Medical History
           </Button>
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl">
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl w-full sm:w-auto" onClick={() => navigate(`/patients/${id}/history`)}>
             <Plus className="mr-2" size={18} />
             Add Entry
           </Button>
@@ -103,7 +110,7 @@ const PatientProfile = () => {
             </CardContent>
           </Card>
 
-          <Card className="border-none shadow-sm rounded-2xl">
+          {/* <Card className="border-none shadow-sm rounded-2xl">
             <CardHeader>
               <CardTitle className="text-sm uppercase tracking-wider text-slate-500">Billing Summary</CardTitle>
             </CardHeader>
@@ -120,19 +127,19 @@ const PatientProfile = () => {
                 <span className="text-slate-900 font-semibold text-sm">Pending</span>
                 <span className="font-bold text-red-600">${patient.billingSummary.pending}</span>
               </div>
-              <Button variant="outline" className="w-full rounded-xl border-slate-200">View Details</Button>
+              <Button variant="outline" className="w-full rounded-xl border-slate-200" onClick={() => setShowBillingModal(true)}>View Details</Button>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
 
         {/* Main Content Tabs */}
         <div className="lg:col-span-3">
           <Tabs defaultValue="summary" className="space-y-6">
-            <TabsList className="bg-white border p-1 rounded-2xl h-14 w-full justify-start gap-2">
-              <TabsTrigger value="summary" className="rounded-xl px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Summary</TabsTrigger>
-              <TabsTrigger value="prescriptions" className="rounded-xl px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Prescriptions</TabsTrigger>
-              <TabsTrigger value="tasks" className="rounded-xl px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Tasks</TabsTrigger>
-              <TabsTrigger value="info" className="rounded-xl px-6 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Personal Info</TabsTrigger>
+            <TabsList className="bg-white border p-1 rounded-2xl h-auto min-h-14 w-full justify-start gap-2 overflow-x-auto no-scrollbar">
+              <TabsTrigger value="summary" className="rounded-xl px-4 sm:px-6 whitespace-nowrap shrink-0 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Summary</TabsTrigger>
+              <TabsTrigger value="prescriptions" className="rounded-xl px-4 sm:px-6 whitespace-nowrap shrink-0 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Prescriptions</TabsTrigger>
+              <TabsTrigger value="tasks" className="rounded-xl px-4 sm:px-6 whitespace-nowrap shrink-0 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Tasks</TabsTrigger>
+              <TabsTrigger value="info" className="rounded-xl px-4 sm:px-6 whitespace-nowrap shrink-0 data-[state=active]:bg-blue-50 data-[state=active]:text-blue-600">Personal Info</TabsTrigger>
             </TabsList>
 
             <TabsContent value="summary" className="space-y-6">
@@ -170,9 +177,12 @@ const PatientProfile = () => {
             </TabsContent>
 
             <TabsContent value="prescriptions" className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-900">Active Prescriptions</h3>
-                <Button size="sm" className="bg-blue-600 rounded-lg">Add Prescription</Button>
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                  <Button size="sm" variant="outline" className="rounded-lg" onClick={() => navigate(`/prescriptions?patientId=${patient.id}`)}>View RX</Button>
+                  <Button size="sm" className="bg-blue-600 rounded-lg" onClick={() => setShowPrescriptionModal(true)}>Add Prescription</Button>
+                </div>
               </div>
               {prescriptions.map(rx => (
                 <Card key={rx.id} className="border-none shadow-sm rounded-2xl">
@@ -202,22 +212,22 @@ const PatientProfile = () => {
             </TabsContent>
 
             <TabsContent value="tasks" className="space-y-4">
-              <div className="flex justify-between items-center">
+              <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                 <h3 className="text-lg font-bold text-slate-900">Assigned Tasks</h3>
-                <Button size="sm" className="bg-blue-600 rounded-lg">Assign New Task</Button>
+                <Button size="sm" className="bg-blue-600 rounded-lg" onClick={() => setShowTaskModal(true)}>Assign New Task</Button>
               </div>
               <div className="space-y-3">
                 {tasks.map(task => (
-                  <div key={task.id} className="flex items-center justify-between p-4 bg-white border rounded-2xl shadow-sm">
-                    <div className="flex items-center gap-4">
+                  <div key={task.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 bg-white border rounded-2xl shadow-sm gap-3">
+                    <div className="flex items-center gap-4 min-w-0">
                       <div className={cn(
                         "w-10 h-10 rounded-xl flex items-center justify-center",
                         task.status === 'completed' ? "bg-emerald-50 text-emerald-600" : "bg-amber-50 text-amber-600"
                       )}>
                         <ClipboardList size={20} />
                       </div>
-                      <div>
-                        <p className="font-bold text-slate-900">{task.description}</p>
+                      <div className="min-w-0">
+                        <p className="font-bold text-slate-900 break-words">{task.description}</p>
                         <p className="text-xs text-slate-500">Due: {task.dueTime} • Assigned to Nurse</p>
                       </div>
                     </div>
@@ -234,10 +244,10 @@ const PatientProfile = () => {
 
             <TabsContent value="info">
               <Card className="border-none shadow-sm rounded-2xl">
-                <CardContent className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+                <CardContent className="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
                   <div className="space-y-4">
                     <h4 className="font-bold text-slate-900 border-b pb-2">Personal Details</h4>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div>
                         <p className="text-xs text-slate-400 uppercase font-bold">Full Name</p>
                         <p className="font-medium">{patient.name}</p>
@@ -279,6 +289,49 @@ const PatientProfile = () => {
           </Tabs>
         </div>
       </div>
+      {showBillingModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Billing Details</h3>
+            <p className="text-sm text-slate-600">Total: ${patient.billingSummary.total} • Paid: ${patient.billingSummary.paid} • Pending: ${patient.billingSummary.pending}</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowBillingModal(false)}>Close</Button>
+              <Button onClick={() => { setShowBillingModal(false); showSuccess("Billing details fetched (mock)"); }}>Acknowledge</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showPrescriptionModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Add Prescription</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <input className="border rounded-lg px-3 py-2" placeholder="Drug name" value={rxForm.drugName} onChange={(e) => setRxForm(p => ({ ...p, drugName: e.target.value }))} />
+              <input className="border rounded-lg px-3 py-2" placeholder="Quantity / Dosage" value={rxForm.quantity} onChange={(e) => setRxForm(p => ({ ...p, quantity: e.target.value }))} />
+            </div>
+            <textarea className="border rounded-lg px-3 py-2 w-full min-h-24" placeholder="Instructions (e.g. Once daily in the morning)" value={rxForm.instructions} onChange={(e) => setRxForm(p => ({ ...p, instructions: e.target.value }))} />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowPrescriptionModal(false)}>Cancel</Button>
+              <Button onClick={() => { setShowPrescriptionModal(false); showSuccess("Prescription added (mock)"); }}>Save</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showTaskModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Create Task</h3>
+            <input className="border rounded-lg px-3 py-2 w-full" placeholder="Nurse name" />
+            <input className="border rounded-lg px-3 py-2 w-full" placeholder="Patient name" defaultValue={patient.name} />
+            <input className="border rounded-lg px-3 py-2 w-full" placeholder="Due time" />
+            <textarea className="border rounded-lg px-3 py-2 w-full min-h-24" placeholder="Task details" />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowTaskModal(false)}>Cancel</Button>
+              <Button onClick={() => { setShowTaskModal(false); showSuccess("Task assigned (mock)"); }}>Create</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

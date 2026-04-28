@@ -1,3 +1,4 @@
+// TODO(BACKEND): Wire patient registration and table actions to persistent backend APIs.
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { MOCK_PATIENTS } from "@/lib/mock-data";
@@ -10,9 +11,11 @@ import {
   TableRow 
 } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Filter, MoreHorizontal, Eye } from "lucide-react";
+import { showSuccess } from "@/utils/toast";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -22,21 +25,24 @@ import {
 
 const Patients = () => {
   const [search, setSearch] = useState("");
+  const [showRegisterModal, setShowRegisterModal] = useState(false);
+  const [newPatient, setNewPatient] = useState({ name: "", age: "", gender: "Male", familyId: "", condition: "", contact: "", bloodGroup: "", lastVisit: "" });
   const navigate = useNavigate();
 
   const filteredPatients = MOCK_PATIENTS.filter(p => 
     p.name.toLowerCase().includes(search.toLowerCase()) || 
     p.id.toLowerCase().includes(search.toLowerCase())
   );
+  const patientFields: Array<keyof typeof newPatient> = ["name", "age", "gender", "familyId", "condition", "contact", "bloodGroup", "lastVisit"];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900">Patients</h1>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100">Patients</h1>
           <p className="text-slate-500">Manage and view all hospital patient records.</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-6">
+        <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-6" onClick={() => setShowRegisterModal(true)}>
           <Plus className="mr-2" size={18} />
           Register Patient
         </Button>
@@ -112,7 +118,7 @@ const Patients = () => {
                       <DropdownMenuItem onClick={() => navigate(`/patients/${patient.id}`)}>
                         <Eye className="mr-2" size={16} /> View Profile
                       </DropdownMenuItem>
-                      <DropdownMenuItem>Edit Information</DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => showSuccess("Edit patient flow will be connected to backend form")}>Edit Information</DropdownMenuItem>
                       <DropdownMenuItem className="text-red-600">Archive Record</DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -122,6 +128,25 @@ const Patients = () => {
           </TableBody>
         </Table>
       </div>
+      {showRegisterModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Register Patient</h3>
+            <div className="grid grid-cols-2 gap-3 text-sm">
+              {patientFields.map((k) => (
+                <div key={k} className={k === 'condition' || k === 'contact' ? 'col-span-2' : ''}>
+                  <Label className="capitalize">{k}</Label>
+                  <Input value={newPatient[k]} onChange={(e) => setNewPatient(prev => ({ ...prev, [k]: e.target.value }))} />
+                </div>
+              ))}
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowRegisterModal(false)}>Cancel</Button>
+              <Button onClick={() => { setShowRegisterModal(false); showSuccess("Patient registration request queued (mock)"); }}>Continue</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

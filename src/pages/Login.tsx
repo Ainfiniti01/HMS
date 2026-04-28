@@ -59,7 +59,7 @@ const Login = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <button type="button" className="text-xs text-blue-600 hover:underline">Forgot password?</button>
+                  <button type="button" className="text-xs text-blue-600 hover:underline" onClick={() => navigate('/forgot-password')}>Forgot password?</button>
                 </div>
                 <Input 
                   id="password" 

@@ -1,3 +1,5 @@
+// TODO(BACKEND): Connect medical history create/edit flows to persistent encounter APIs.
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { MOCK_PATIENTS, MOCK_HISTORY } from "@/lib/mock-data";
 import { Button } from "@/components/ui/button";
@@ -14,11 +16,30 @@ import {
   ChevronRight
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { showSuccess } from "@/utils/toast";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 const MedicalHistory = () => {
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState<string | null>(null);
+  const [entryForm, setEntryForm] = useState({ date: "", doctorName: "", complaint: "", observation: "", diagnosis: "", treatment: "", notes: "", clinicalNotes: "" });
   const { id } = useParams();
   const navigate = useNavigate();
   const patient = MOCK_PATIENTS.find(p => p.id === id);
+  const openEdit = (entry: typeof MOCK_HISTORY[number]) => {
+    setEntryForm({
+      date: entry.date,
+      doctorName: entry.doctorName,
+      complaint: entry.complaint,
+      observation: entry.observation,
+      diagnosis: entry.diagnosis,
+      treatment: entry.treatment,
+      notes: entry.notes,
+      clinicalNotes: entry.notes,
+    });
+    setShowEditModal(entry.id);
+  };
 
   if (!patient) return <div>Patient not found</div>;
 
@@ -34,7 +55,7 @@ const MedicalHistory = () => {
             <p className="text-slate-500">Clinical timeline for {patient.name}</p>
           </div>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl h-12 px-6 shadow-lg shadow-blue-200">
+        <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl h-12 px-6 shadow-lg shadow-blue-200" onClick={() => setShowAddModal(true)}>
           <Plus className="mr-2" size={20} />
           Add New Entry
         </Button>
@@ -71,7 +92,7 @@ const MedicalHistory = () => {
       {/* Timeline */}
       <div className="relative space-y-8 before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-blue-200 before:via-slate-200 before:to-transparent">
         
-        {MOCK_HISTORY.map((entry, index) => (
+        {MOCK_HISTORY.map((entry) => (
           <div key={entry.id} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
             {/* Dot */}
             <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white bg-blue-600 text-white shadow shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 absolute left-0 md:left-1/2 -translate-x-1/2 z-10">
@@ -131,7 +152,7 @@ const MedicalHistory = () => {
               </div>
 
               <div className="mt-8 flex justify-end">
-                <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl">
+                <Button variant="ghost" className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl" onClick={() => openEdit(entry)}>
                   Edit Entry
                   <ChevronRight size={16} className="ml-1" />
                 </Button>
@@ -148,6 +169,35 @@ const MedicalHistory = () => {
           <p className="text-slate-500 font-medium">End of medical history records</p>
         </div>
       </div>
+
+      {(showAddModal || showEditModal) && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-slate-900 w-full max-w-3xl rounded-2xl p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-slate-100">{showEditModal ? "Edit Entry" : "Add New Entry"}</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div><Label>Date and time</Label><Input value={entryForm.date} onChange={(e) => setEntryForm((p) => ({ ...p, date: e.target.value }))} placeholder="2026-04-29 09:30" /></div>
+              <div><Label>Doctor name</Label><Input value={entryForm.doctorName} onChange={(e) => setEntryForm((p) => ({ ...p, doctorName: e.target.value }))} /></div>
+            </div>
+            <div><Label>Complaint</Label><Textarea className="min-h-24" value={entryForm.complaint} onChange={(e) => setEntryForm((p) => ({ ...p, complaint: e.target.value }))} /></div>
+            <div><Label>Observation</Label><Textarea className="min-h-24" value={entryForm.observation} onChange={(e) => setEntryForm((p) => ({ ...p, observation: e.target.value }))} /></div>
+            <div><Label>Diagnosis</Label><Textarea className="min-h-24" value={entryForm.diagnosis} onChange={(e) => setEntryForm((p) => ({ ...p, diagnosis: e.target.value }))} /></div>
+            <div><Label>Treatment / Plan</Label><Textarea className="min-h-24" value={entryForm.treatment} onChange={(e) => setEntryForm((p) => ({ ...p, treatment: e.target.value }))} /></div>
+            <div><Label>Additional notes</Label><Textarea className="min-h-20" value={entryForm.notes} onChange={(e) => setEntryForm((p) => ({ ...p, notes: e.target.value }))} /></div>
+            <div>
+              <Label>Clinical Notes (rich text style)</Label>
+              <div className="flex gap-2 mb-2 text-xs">
+                <Button type="button" variant="outline" size="sm" onClick={() => setEntryForm((p) => ({ ...p, clinicalNotes: `${p.clinicalNotes}\n• ` }))}>• Bullet</Button>
+                <Button type="button" variant="outline" size="sm" onClick={() => setEntryForm((p) => ({ ...p, clinicalNotes: `${p.clinicalNotes}\n**emphasis** ` }))}>Emphasis</Button>
+              </div>
+              <Textarea className="min-h-40" value={entryForm.clinicalNotes} onChange={(e) => setEntryForm((p) => ({ ...p, clinicalNotes: e.target.value }))} />
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setShowAddModal(false); setShowEditModal(null); }}>Cancel</Button>
+              <Button onClick={() => { setShowAddModal(false); setShowEditModal(null); showSuccess(showEditModal ? "Entry updated" : "New entry added"); }}>Save</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

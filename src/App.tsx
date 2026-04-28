@@ -16,6 +16,7 @@ import Prescriptions from "./pages/Prescriptions";
 import Appointments from "./pages/Appointments";
 import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
+import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
 // import { Analytics } from "@vercel/analytics/next"
 
@@ -42,6 +43,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
           
           <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
           <Route path="/patients" element={<ProtectedRoute><Patients /></ProtectedRoute>} />

@@ -1,3 +1,4 @@
+// TODO(BACKEND): Hook task creation, completion, reporting, and mutations to backend services.
 import { useState } from "react";
 import { MOCK_TASKS, MOCK_USERS } from "@/lib/mock-data";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,10 +15,18 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { showSuccess } from "@/utils/toast";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 
 const Tasks = () => {
   const role = localStorage.getItem('hms_user_role') || 'doctor';
   const [tasks, setTasks] = useState(MOCK_TASKS);
+  const [pendingCompleteId, setPendingCompleteId] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [showDeleteFor, setShowDeleteFor] = useState<string | null>(null);
+  const [deleteReason, setDeleteReason] = useState("");
+  const [taskForm, setTaskForm] = useState({ nurseName: "", patientName: "", dueTime: "", priority: "Routine", details: "" });
 
   const handleComplete = (id: string) => {
     setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'completed' } : t));
@@ -34,7 +43,7 @@ const Tasks = () => {
           </p>
         </div>
         {role === 'doctor' && (
-          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-6">
+          <Button className="bg-blue-600 hover:bg-blue-700 rounded-xl h-11 px-6" onClick={() => setShowCreateModal(true)}>
             <Plus className="mr-2" size={18} />
             Create Task
           </Button>
@@ -56,7 +65,7 @@ const Tasks = () => {
                   <Badge className="bg-blue-50 text-blue-700 hover:bg-blue-50 border-blue-100 rounded-md">
                     {task.patientName}
                   </Badge>
-                  <button className="text-slate-400 hover:text-slate-600">
+                  <button className="text-slate-400 hover:text-slate-600" onClick={() => setShowDeleteFor(task.id)}>
                     <MoreVertical size={16} />
                   </button>
                 </div>
@@ -70,7 +79,7 @@ const Tasks = () => {
                     <Button 
                       size="sm" 
                       className="bg-emerald-600 hover:bg-emerald-700 rounded-lg h-8 text-xs"
-                      onClick={() => handleComplete(task.id)}
+                      onClick={() => setPendingCompleteId(task.id)}
                     >
                       Mark Done
                     </Button>
@@ -156,12 +165,74 @@ const Tasks = () => {
               </div>
             </div>
 
-            <Button variant="outline" className="w-full border-slate-700 text-white hover:bg-slate-800 rounded-xl">
+            <Button variant="outline" className="w-full border-slate-700 text-black hover:bg-slate-800 hover:text-white rounded-xl" onClick={() => setShowReportModal(true)}>
               Generate Report
             </Button>
           </CardContent>
         </Card>
       </div>
+      {showCreateModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Create Task</h3>
+            <Input placeholder="Nurse name" value={taskForm.nurseName} onChange={(e) => setTaskForm(p => ({ ...p, nurseName: e.target.value }))} />
+            <Input placeholder="Patient name" value={taskForm.patientName} onChange={(e) => setTaskForm(p => ({ ...p, patientName: e.target.value }))} />
+            <Input placeholder="Due time" value={taskForm.dueTime} onChange={(e) => setTaskForm(p => ({ ...p, dueTime: e.target.value }))} />
+            <Input placeholder="Priority (Urgent/Routine/Follow-up)" value={taskForm.priority} onChange={(e) => setTaskForm(p => ({ ...p, priority: e.target.value }))} />
+            <Textarea placeholder="Task details" value={taskForm.details} onChange={(e) => setTaskForm(p => ({ ...p, details: e.target.value }))} />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setShowCreateModal(false)}>Cancel</Button>
+              <Button onClick={() => { setShowCreateModal(false); showSuccess("Task creation request sent (mock)"); }}>Create</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {pendingCompleteId && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold">Confirm Completion</h3>
+            <p className="text-sm text-slate-600">Are you sure you want to mark this task as done?</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setPendingCompleteId(null)}>Cancel</Button>
+              <Button onClick={() => { handleComplete(pendingCompleteId); setPendingCompleteId(null); }}>Confirm</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showDeleteFor && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl p-6 space-y-4">
+            <h3 className="text-lg font-bold text-red-600">Delete Task</h3>
+            <p className="text-sm text-slate-600">Provide reason for deletion.</p>
+            <Textarea placeholder="Reason" value={deleteReason} onChange={(e) => setDeleteReason(e.target.value)} />
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setShowDeleteFor(null); setDeleteReason(""); }}>Cancel</Button>
+              <Button variant="destructive" onClick={() => { setTasks(prev => prev.filter(t => t.id !== showDeleteFor)); setShowDeleteFor(null); setDeleteReason(""); showSuccess("Task deleted"); }}>Confirm Delete</Button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showReportModal && (
+        <div className="fixed inset-0 z-50 bg-black/40 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-2xl rounded-2xl p-6 space-y-4">
+            <h3 className="text-xl font-bold">Task Report – April 2026</h3>
+            <p>Total Tasks: 42</p>
+            <p>Completed: 30</p>
+            <p>Pending: 12</p>
+            <div>
+              <p className="font-semibold">Priority Breakdown</p>
+              <p>- Urgent: 8</p><p>- Routine: 24</p><p>- Follow-up: 10</p>
+            </div>
+            <div>
+              <p className="font-semibold">Top Performing Nurse</p>
+              <p>- Nurse A (12 tasks completed)</p>
+            </div>
+            <div className="flex justify-end">
+              <Button onClick={() => setShowReportModal(false)}>Close</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
