@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Users, ClipboardCheck, Clock, Activity, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const Dashboard = () => {
   const role = localStorage.getItem('hms_user_role') || 'doctor';
