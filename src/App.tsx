@@ -18,7 +18,6 @@ import Staff from "./pages/Staff";
 import Settings from "./pages/Settings";
 import ForgotPassword from "./pages/ForgotPassword";
 import NotFound from "./pages/NotFound";
-import { Analytics } from "@vercel/analytics/next"
 
 const queryClient = new QueryClient();
 
